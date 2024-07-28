@@ -387,11 +387,15 @@ nk_RGFW_new_frame(void)
     for (i = 0; i < RGFW.text_len; ++i)
         nk_input_unicode(ctx, RGFW.text[i]);
 
+    /* 
+        I don't know what the point of this is 
+        but it seems to cause a lot of weird issues
+    */
     /* optional grabbing behavior */
-    if (ctx->input.mouse.grab) /* I don't know if this is the intended behavior */
-        RGFW_window_mouseHold(win, RGFW_AREA(0, 0));
+    /*if (ctx->input.mouse.grab) /* I don't know if this is the intended behavior /
+        RGFW_window_showMouse(win, 0); or RGFW_window_holdMouse ?
     else if (ctx->input.mouse.ungrab)
-        RGFW_window_mouseUnhold(win);
+        RGFW_window_showMouse(win, 1);*/
 
     nk_input_key(ctx, NK_KEY_DEL, RGFW_isPressed(win, RGFW_Delete) == RGFW_TRUE);
     nk_input_key(ctx, NK_KEY_ENTER, RGFW_isPressed(win, RGFW_Return) == RGFW_TRUE);
