@@ -20,7 +20,7 @@
 #define NK_RGFW_GL2_IMPLEMENTATION
 #define NK_KEYSTATE_BASED_INPUT
 #include "nuklear.h"
-#include "nuklear_rgfw.h"
+#include "nuklear_rgfw_opengl2.h"
 
 #define RGFW_IMPLEMENTATION
 #include "RGFW.h"
