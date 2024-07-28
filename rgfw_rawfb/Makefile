@@ -1,6 +1,6 @@
 CC = gcc
 
-LIBS :=-lgdi32 -lm -lopengl32 -lwinmm -ggdb 
+LIBS :=-lgdi32 -lm -lwinmm -ggdb 
 EXT = .exe
 STATIC =
 
@@ -28,18 +28,18 @@ else
 endif
 
 ifeq ($(detected_OS),Windows)
-	LIBS := -ggdb -ldwmapi -lshell32 -lwinmm -lgdi32 -lopengl32 $(STATIC)
+	LIBS := -ggdb -ldwmapi -lshell32 -lwinmm -lgdi32 $(STATIC)
 	EXT = .exe
 	OS_DIR = \\
 
 endif
 ifeq ($(detected_OS),Darwin)        # Mac OS X
-	LIBS := -lm -framework Foundation -framework AppKit -framework OpenGL -framework CoreVideo$(STATIC)
+	LIBS := -lm -framework Foundation -framework AppKit -framework CoreVideo$(STATIC)
 	EXT = 
 	OS_DIR = /
 endif
 ifeq ($(detected_OS),Linux)
-    LIBS := -lXrandr -lX11 -lm -lGL -ldl -lpthread $(STATIC)
+    LIBS := -lXrandr -lX11 -lm -ldl -lpthread $(STATIC)
 	EXT =
 	OS_DIR = /
 endif
