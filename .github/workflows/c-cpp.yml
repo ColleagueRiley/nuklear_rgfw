@@ -14,7 +14,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@master
+      with:
+        persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+        fetch-depth: 0             # otherwise, you will fail to push refs to dest repo
 
     - name: Set up Emscripten
       uses: mymindstorm/setup-emsdk@v14
@@ -22,14 +25,3 @@ jobs:
     - name: Build WASM
       run: |
         cd rgfw_opengl2 && make CC=emcc
-
-    - name: Commit WASM files
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        git config --global user.name "github-actions"
-        git config --global user.email "actions@github.com"
-        git add ./rgfw_opengl2
-        git commit ./rgfw_opengl2 -m "Update WASM files"
-        git push
-
