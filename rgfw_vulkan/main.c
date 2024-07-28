@@ -6,9 +6,6 @@
 #include <stdio.h>
 #include <time.h>
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
 #define NK_INCLUDE_STANDARD_VARARGS
@@ -17,16 +14,20 @@
 #define NK_INCLUDE_FONT_BAKING
 #define NK_INCLUDE_DEFAULT_FONT
 #define NK_IMPLEMENTATION
-#define NK_GLFW_VULKAN_IMPLEMENTATION
+#define NK_RGFW_VULKAN_IMPLEMENTATION
 #define NK_KEYSTATE_BASED_INPUT
-#include "../../nuklear.h"
-#include "nuklear_glfw_vulkan.h"
+#include "nuklear.h"
+#include "nuklear_rgfw_vulkan.h"
 
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 800
 
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
+
+#define RGFW_IMPLEMENTATION
+#include "RGFW.h"
+
 
 /* ===============================================================
  *

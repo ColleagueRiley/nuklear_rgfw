@@ -74,7 +74,7 @@ ifneq (,$(filter $(CC),emcc))
 	CC=emcc
 endif
 
-LIBS += -I../../
+LIBS += -I../
 
 all: main.c
 	$(CC) main.c  $(LINK_GL1) $(LIBS) -o rgfw-nuklear$(EXT)
