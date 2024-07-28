@@ -1,4 +1,4 @@
-#  nuklear_rgfw.h
+#  nuklear_rgfw
 RGFW platform backend for Nuklear
 
 # example
