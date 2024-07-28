@@ -17,10 +17,12 @@
 #define NK_INCLUDE_FONT_BAKING
 #define NK_INCLUDE_DEFAULT_FONT
 #define NK_IMPLEMENTATION
-#define NK_RGFW_GL2_IMPLEMENTATION
+
 #define NK_KEYSTATE_BASED_INPUT
 #include "nuklear.h"
-#include "nuklear_rgfw_opengl2.h"
+
+#define NK_RGFW_GL2_IMPLEMENTATION
+#include "nuklear_rgfw_gl2.h"
 
 #define RGFW_IMPLEMENTATION
 #include "RGFW.h"
@@ -93,7 +95,11 @@ int main(void)
     RGFW_window* win = RGFW_createWindow("RGFW Demo", RGFW_RECT(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), RGFW_CENTER);
     
     /* GUI */
+    #ifdef API_OPENGL2
     ctx = nk_RGFW_init(win, NK_RGFW_INSTALL_CALLBACKS);
+    #else
+    ctx = nk_RGFW_init(win, NK_RGFW_INSTALL_CALLBACKS);
+    #endif
     /* Load Fonts: if none of these are loaded a default font will be used  */
     /* Load Cursor: if you uncomment cursor loading please hide the cursor */
     {struct nk_font_atlas *atlas;

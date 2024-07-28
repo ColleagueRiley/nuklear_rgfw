@@ -13,16 +13,8 @@
 #ifndef NK_RGFW_GL2_H_
 #define NK_RGFW_GL2_H_
 
-#if !defined(u32)
-	#if defined(_MSC_VER) || defined(__SYMBIAN32__) /* MSVC might not have stdint.h */
-		typedef unsigned int 	u32;
-	#else /* use stdint standard types instead of c ""standard"" types */
-		#include <stdint.h>
-		typedef uint32_t   u32;
-	#endif
-#endif
+#include "RGFW.h"
 
-struct RGFW_window;
 enum nk_RGFW_init_state{
     NK_RGFW_DEFAULT = 0,
     NK_RGFW_INSTALL_CALLBACKS
@@ -35,8 +27,9 @@ NK_API void                 nk_RGFW_new_frame(void);
 NK_API void                 nk_RGFW_render(enum nk_anti_aliasing);
 NK_API void                 nk_RGFW_shutdown(void);
 
-NK_API void                 nk_RGFW_key_callback(struct RGFW_window* win, u32 keycode, char keyName[16], unsigned char lockState, unsigned char pressed);
-NK_API void                 nk_rgfw_scroll_callback(struct RGFW_window* win, double xoff, double yoff);
+NK_API void                 nk_RGFW_key_callback(RGFW_window* win, u32 keycode, char keyName[16], unsigned char lockState, unsigned char pressed);
+NK_API void                 nk_RGFW_mouse_button_callback(RGFW_window*  window, unsigned char button, double scroll, unsigned char pressed);
+NK_API void                 nk_rgfw_scroll_callback(RGFW_window* win, double xoff, double yoff);
 
 #endif
 
@@ -49,7 +42,6 @@ NK_API void                 nk_rgfw_scroll_callback(struct RGFW_window* win, dou
  */
 #ifdef NK_RGFW_GL2_IMPLEMENTATION
 
-#include "RGFW.h"
 #include <string.h>
 #include <stdlib.h>
 

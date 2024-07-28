@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "nuklear_rgfw_opengl2.h": "c",
+        "stdint.h": "c",
+        "cstdint": "cpp",
+        "rgfw.h": "c"
+    }
+}
