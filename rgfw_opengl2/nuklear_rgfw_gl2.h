@@ -15,6 +15,8 @@
 
 #include "RGFW.h"
 
+#include <GL/gl.h>
+
 enum nk_RGFW_init_state{
     NK_RGFW_DEFAULT = 0,
     NK_RGFW_INSTALL_CALLBACKS
@@ -100,7 +102,9 @@ nk_RGFW_render(enum nk_anti_aliasing AA)
 {
     /* setup global state */
     struct nk_RGFW_device *dev = &RGFW.ogl;
+    #ifndef __EMSCRIPTEN__
     glPushAttrib(GL_ENABLE_BIT|GL_COLOR_BUFFER_BIT|GL_TRANSFORM_BIT);
+    #endif
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_SCISSOR_TEST);
@@ -199,7 +203,9 @@ nk_RGFW_render(enum nk_anti_aliasing AA)
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
+    #ifndef __EMSCRIPTEN__
     glPopAttrib();
+    #endif
 }
 
 char RGFW_keyCodeToChar(u32 keyCode, b8 caps) {
