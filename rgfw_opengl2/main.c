@@ -133,6 +133,7 @@ int main(void)
 
     file_browser_init(&browser, &media);
     #endif
+    char buf[256] = {0};
 
     while (!RGFW_window_shouldClose(win))
     {
@@ -172,6 +173,7 @@ int main(void)
                 bg.a = nk_propertyf(ctx, "#A:", 0, bg.a, 1.0f, 0.01f,0.005f);
                 nk_combo_end(ctx);
             }
+          nk_edit_string_zero_terminated (ctx, NK_EDIT_FIELD, buf, 255, nk_filter_default);
         }
         nk_end(ctx);
 

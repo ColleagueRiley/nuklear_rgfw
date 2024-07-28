@@ -29,7 +29,7 @@ jobs:
       run: |
         git config --global user.name "github-actions"
         git config --global user.email "actions@github.com"
-        git add path/to/your/wasm/files
-        git commit -m "Update WASM files"
+        git add ./rgfw_opengl2
+        git commit ./rgfw_opengl2 -m "Update WASM files"
         git push
 
