@@ -1,1 +1,3 @@
-- add other backends (opengl 3, software rendering, vulkan, directX, ect)
+- opengl4
+- vulkan
+- rawfb

@@ -65,9 +65,9 @@ NK_API void                 nk_RGFW_render(struct nk_RGFW* RGFW, enum nk_anti_al
 NK_API void                 nk_RGFW_device_destroy(struct nk_RGFW* RGFW);
 NK_API void                 nk_RGFW_device_create(struct nk_RGFW* RGFW);
 
-NK_API void                 nk_RGFW_char_callback(RGFW_window *win, unsigned int codepoint);
-NK_API void                 nk_gflw3_scroll_callback(RGFW_window *win, double xoff, double yoff);
-NK_API void                 nk_RGFW_mouse_button_callback(RGFW_window *win, int button, int action, int mods);
+NK_API void                 nk_RGFW_key_callback(RGFW_window* win, u32 keycode, char keyName[16], unsigned char lockState, unsigned char pressed);
+NK_API void                 nk_RGFW_mouse_button_callback(RGFW_window*  window, unsigned char button, double scroll, unsigned char pressed);
+NK_API void                 nk_rgfw_scroll_callback(RGFW_window* win, double xoff, double yoff);
 
 #endif
 /*
@@ -311,47 +311,111 @@ nk_RGFW_render(struct nk_RGFW* RGFW, enum nk_anti_aliasing AA, int max_vertex_bu
     glDisable(GL_SCISSOR_TEST);
 }
 
-NK_API void
-nk_RGFW_char_callback(RGFW_window *win, unsigned int codepoint)
-{
-    struct nk_RGFW* RGFW = RGFWGetWindowUserPointer(win);
-    if (RGFW->text_len < NK_RGFW_TEXT_MAX)
-        RGFW->text[RGFW->text_len++] = codepoint;
+char RGFW_keyCodeToChar(u32 keyCode, b8 caps) {
+    static const char map[] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        '`', '0', '1', '2', '3',
+        '4', '5', '6', '7', '8', 
+        '9', '-', '=', 0, '\t', 
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
+        'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+        'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
+        'x', 'y', 'z', '.', ',', '/', '[', ']', 
+        ';', '\n', '\'', '\\', 
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        '/', '*', '-', '1', '2', '3', 
+        '3', '5', '6', '7', '8',  '9', '0', '\n'
+    };
+
+    static const char mapCaps[] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        '~', ')', '!', '@', '#',
+        '$', '%', '^', '&', '*', 
+        '(', '_', '+', 0, '0', 
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+        'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+        'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+        'X', 'Y', 'Z', '>', '<', '?', '{', '}', 
+        ':', '\n', '"', '|', 
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        '?', '*', '-', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+
+    if (caps == RGFW_FALSE)
+        return map[keyCode];
+    
+    return mapCaps[keyCode];
 }
 
 NK_API void
-nk_gflw3_scroll_callback(RGFW_window *win, double xoff, double yoff)
+nk_RGFW_key_callback(RGFW_window* win, u32 keycode, char keyName[16], u8 lockState, b8 pressed)
 {
-    struct nk_RGFW* RGFW = RGFWGetWindowUserPointer(win);
+    struct nk_RGFW* RGFW = (struct nk_RGFW*)win->userPtr;
+
+    if (pressed == RGFW_FALSE)
+        return;
+    
+    RGFW_UNUSED(keyName);
+    
+    #define RGFW_xor(x, y) (( (x) && (!(y)) ) ||  ((y) && (!(x)) ))
+    b8 caps4caps = (lockState & RGFW_CAPSLOCK) && ((keycode >= RGFW_a) && (keycode <= RGFW_z));
+    char ch = RGFW_keyCodeToChar(keycode, RGFW_xor((RGFW_isPressed(win, RGFW_ShiftL) || RGFW_isPressed(win, RGFW_ShiftR)), caps4caps));
+    #undef RGFW_xor
+
+    if (RGFW->text_len < NK_RGFW_TEXT_MAX)
+        RGFW->text[RGFW->text_len++] = ch;
+}
+
+NK_API void
+nk_RGFW_scroll_callback(RGFW_window *win, double xoff, double yoff)
+{
+    struct nk_RGFW* RGFW = (struct nk_RGFW*)win->userPtr;
     (void)xoff;
     RGFW->scroll.x += (float)xoff;
     RGFW->scroll.y += (float)yoff;
 }
 
 NK_API void
-nk_RGFW_mouse_button_callback(RGFW_window* win, int button, int action, int mods)
+nk_RGFW_mouse_button_callback(RGFW_window*  window, u8 button, double scroll, b8 pressed)
 {
-    struct nk_RGFW* RGFW = RGFWGetWindowUserPointer(win);
+    struct nk_RGFW* RGFW = (struct nk_RGFW*)window->userPtr;
+
     double x, y;
-    NK_UNUSED(mods);
-    if (button != RGFW_MOUSE_BUTTON_LEFT) return;
-    RGFWGetCursorPos(win, &x, &y);
-    if (action == RGFW_PRESS)  {
-        double dt = RGFWGetTime() - RGFW->last_button_click;
+    if (button != RGFW_mouseLeft && button < RGFW_mouseScrollUp) return;
+    RGFW_point p = RGFW_window_getMousePoint(window);
+    x = (double)p.x;
+    y = (double)p.y;
+
+    if (button >= RGFW_mouseScrollUp) {
+        return nk_RGFW_scroll_callback(window, 0, scroll);
+    }
+
+    if (pressed == RGFW_TRUE)  {
+        double dt = RGFW_getTime() - RGFW->last_button_click;
         if (dt > NK_RGFW_DOUBLE_CLICK_LO && dt < NK_RGFW_DOUBLE_CLICK_HI) {
             RGFW->is_double_click_down = nk_true;
             RGFW->double_click_pos = nk_vec2((float)x, (float)y);
         }
-        RGFW->last_button_click = RGFWGetTime();
+        RGFW->last_button_click = RGFW_getTime();
     } else RGFW->is_double_click_down = nk_false;
 }
+
+static char* clipboard_string = NULL;
 
 NK_INTERN void
 nk_RGFW_clipboard_paste(nk_handle usr, struct nk_text_edit *edit)
 {
     struct nk_RGFW* RGFW = (struct nk_RGFW*)usr.ptr;
-    const char *text = RGFWGetClipboardString(RGFW->win);
-    if (text) nk_textedit_paste(edit, text, nk_strlen(text));
+    if (clipboard_string != NULL) {
+        free(clipboard_string);
+        clipboard_string = NULL;
+    }
+    
+    size_t size;
+    clipboard_string = RGFW_readClipboard(&size);
+    if (clipboard_string) nk_textedit_paste(edit, (const char*)clipboard_string, size);
     (void)usr;
 }
 
@@ -360,24 +424,24 @@ nk_RGFW_clipboard_copy(nk_handle usr, const char *text, int len)
 {
     struct nk_RGFW* RGFW = (struct nk_RGFW*)usr.ptr;
     char *str = 0;
+    (void)usr;
     if (!len) return;
     str = (char*)malloc((size_t)len+1);
     if (!str) return;
     memcpy(str, text, (size_t)len);
     str[len] = '\0';
-    RGFWSetClipboardString(RGFW->win, str);
+    RGFW_writeClipboard(str, len);
     free(str);
 }
 
 NK_API struct nk_context*
 nk_RGFW_init(struct nk_RGFW* RGFW, RGFW_window *win, enum nk_RGFW_init_state init_state)
 {
-    RGFWSetWindowUserPointer(win, RGFW);
+    win->userPtr = (void*)RGFW;
     RGFW->win = win;
     if (init_state == NK_RGFW_INSTALL_CALLBACKS) {
-        RGFWSetScrollCallback(win, nk_gflw3_scroll_callback);
-        RGFWSetCharCallback(win, nk_RGFW_char_callback);
-        RGFWSetMouseButtonCallback(win, nk_RGFW_mouse_button_callback);
+        RGFW_setKeyCallback(nk_RGFW_key_callback);
+        RGFW_setMouseButtonCallback(nk_RGFW_mouse_button_callback);
     }
     nk_init_default(&RGFW->ctx, 0);
     RGFW->ctx.clip.copy = nk_RGFW_clipboard_copy;
@@ -419,8 +483,13 @@ nk_RGFW_new_frame(struct nk_RGFW* RGFW)
     struct nk_context *ctx = &RGFW->ctx;
     struct RGFW_window *win = RGFW->win;
 
-    RGFWGetWindowSize(win, &RGFW->width, &RGFW->height);
-    RGFWGetFramebufferSize(win, &RGFW->display_width, &RGFW->display_height);
+    RGFW->width = win->r.w;
+    RGFW->height = win->r.h;
+
+    RGFW_area screenSize = RGFW_getScreenSize();
+    RGFW->display_width = win->r.w;
+    RGFW->display_height = win->r.h;
+
     RGFW->fb_scale.x = (float)RGFW->display_width/(float)RGFW->width;
     RGFW->fb_scale.y = (float)RGFW->display_height/(float)RGFW->height;
 
@@ -429,59 +498,66 @@ nk_RGFW_new_frame(struct nk_RGFW* RGFW)
         nk_input_unicode(ctx, RGFW->text[i]);
 
 #ifdef NK_RGFW_GL3_MOUSE_GRABBING
+    /* 
+        I don't know what the point of this is 
+        but it seems to cause a lot of weird issues
+    */
     /* optional grabbing behavior */
-    if (ctx->input.mouse.grab)
-        RGFWSetInputMode(RGFW.win, RGFW_CURSOR, RGFW_CURSOR_HIDDEN);
+    /*if (ctx->input.mouse.grab) /* I don't know if this is the intended behavior /
+        RGFW_window_showMouse(win, 0); or RGFW_window_holdMouse ?
     else if (ctx->input.mouse.ungrab)
-        RGFWSetInputMode(RGFW->win, RGFW_CURSOR, RGFW_CURSOR_NORMAL);
+        RGFW_window_showMouse(win, 1);*/
 #endif
+    nk_input_key(ctx, NK_KEY_DEL, RGFW_isPressed(win, RGFW_Delete) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_ENTER, RGFW_isPressed(win, RGFW_Return) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_TAB, RGFW_isPressed(win, RGFW_Tab) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_BACKSPACE, RGFW_isPressed(win, RGFW_BackSpace) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_UP, RGFW_isPressed(win, RGFW_Up) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_DOWN, RGFW_isPressed(win, RGFW_Down) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_TEXT_START, RGFW_isPressed(win, RGFW_Home) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_TEXT_END, RGFW_isPressed(win, RGFW_End) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_SCROLL_START, RGFW_isPressed(win, RGFW_Home) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_SCROLL_END, RGFW_isPressed(win, RGFW_End) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_SCROLL_DOWN, RGFW_isPressed(win, RGFW_PageDown) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_SCROLL_UP, RGFW_isPressed(win, RGFW_PageUp) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_SHIFT, RGFW_isPressed(win, RGFW_ShiftL) == RGFW_TRUE||
+                                    RGFW_isPressed(win, RGFW_ShiftR) == RGFW_TRUE);
 
-    nk_input_key(ctx, NK_KEY_DEL, RGFWGetKey(win, RGFW_KEY_DELETE) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_ENTER, RGFWGetKey(win, RGFW_KEY_ENTER) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_TAB, RGFWGetKey(win, RGFW_KEY_TAB) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_BACKSPACE, RGFWGetKey(win, RGFW_KEY_BACKSPACE) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_UP, RGFWGetKey(win, RGFW_KEY_UP) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_DOWN, RGFWGetKey(win, RGFW_KEY_DOWN) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_TEXT_START, RGFWGetKey(win, RGFW_KEY_HOME) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_TEXT_END, RGFWGetKey(win, RGFW_KEY_END) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_SCROLL_START, RGFWGetKey(win, RGFW_KEY_HOME) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_SCROLL_END, RGFWGetKey(win, RGFW_KEY_END) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_SCROLL_DOWN, RGFWGetKey(win, RGFW_KEY_PAGE_DOWN) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_SCROLL_UP, RGFWGetKey(win, RGFW_KEY_PAGE_UP) == RGFW_PRESS);
-    nk_input_key(ctx, NK_KEY_SHIFT, RGFWGetKey(win, RGFW_KEY_LEFT_SHIFT) == RGFW_PRESS||
-                                    RGFWGetKey(win, RGFW_KEY_RIGHT_SHIFT) == RGFW_PRESS);
-
-    if (RGFWGetKey(win, RGFW_KEY_LEFT_CONTROL) == RGFW_PRESS ||
-        RGFWGetKey(win, RGFW_KEY_RIGHT_CONTROL) == RGFW_PRESS) {
-        nk_input_key(ctx, NK_KEY_COPY, RGFWGetKey(win, RGFW_KEY_C) == RGFW_PRESS);
-        nk_input_key(ctx, NK_KEY_PASTE, RGFWGetKey(win, RGFW_KEY_V) == RGFW_PRESS);
-        nk_input_key(ctx, NK_KEY_CUT, RGFWGetKey(win, RGFW_KEY_X) == RGFW_PRESS);
-        nk_input_key(ctx, NK_KEY_TEXT_UNDO, RGFWGetKey(win, RGFW_KEY_Z) == RGFW_PRESS);
-        nk_input_key(ctx, NK_KEY_TEXT_REDO, RGFWGetKey(win, RGFW_KEY_R) == RGFW_PRESS);
-        nk_input_key(ctx, NK_KEY_TEXT_WORD_LEFT, RGFWGetKey(win, RGFW_KEY_LEFT) == RGFW_PRESS);
-        nk_input_key(ctx, NK_KEY_TEXT_WORD_RIGHT, RGFWGetKey(win, RGFW_KEY_RIGHT) == RGFW_PRESS);
-        nk_input_key(ctx, NK_KEY_TEXT_LINE_START, RGFWGetKey(win, RGFW_KEY_B) == RGFW_PRESS);
-        nk_input_key(ctx, NK_KEY_TEXT_LINE_END, RGFWGetKey(win, RGFW_KEY_E) == RGFW_PRESS);
+    if (RGFW_isPressed(win, RGFW_ControlL) == RGFW_TRUE ||
+        RGFW_isPressed(win, RGFW_ControlR) == RGFW_TRUE) {
+        nk_input_key(ctx, NK_KEY_COPY, RGFW_isPressed(win, RGFW_c) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_PASTE, RGFW_isPressed(win, RGFW_v) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_CUT, RGFW_isPressed(win, RGFW_x) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_TEXT_UNDO, RGFW_isPressed(win, RGFW_z) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_TEXT_REDO, RGFW_isPressed(win, RGFW_r) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_TEXT_WORD_LEFT, RGFW_isPressed(win, RGFW_Left) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_TEXT_WORD_RIGHT, RGFW_isPressed(win, RGFW_Right) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_TEXT_LINE_START, RGFW_isPressed(win, RGFW_b) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_TEXT_LINE_END, RGFW_isPressed(win, RGFW_e) == RGFW_TRUE);
     } else {
-        nk_input_key(ctx, NK_KEY_LEFT, RGFWGetKey(win, RGFW_KEY_LEFT) == RGFW_PRESS);
-        nk_input_key(ctx, NK_KEY_RIGHT, RGFWGetKey(win, RGFW_KEY_RIGHT) == RGFW_PRESS);
+        nk_input_key(ctx, NK_KEY_LEFT, RGFW_isPressed(win, RGFW_Left) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_RIGHT, RGFW_isPressed(win, RGFW_Right) == RGFW_TRUE);
         nk_input_key(ctx, NK_KEY_COPY, 0);
         nk_input_key(ctx, NK_KEY_PASTE, 0);
         nk_input_key(ctx, NK_KEY_CUT, 0);
     }
 
-    RGFWGetCursorPos(win, &x, &y);
-    nk_input_motion(ctx, (int)x, (int)y);
+
+    RGFW_point p = RGFW_window_getMousePoint(RGFW->win);
+    nk_input_motion(ctx, p.x, p.y);
 #ifdef NK_RGFW_GL3_MOUSE_GRABBING
     if (ctx->input.mouse.grabbed) {
-        RGFWSetCursorPos(RGFW->win, ctx->input.mouse.prev.x, ctx->input.mouse.prev.y);
+        ctx->input.mouse.prev.x = (float)p.x;
+        ctx->input.mouse.prev.y = (float)p.y;
+
         ctx->input.mouse.pos.x = ctx->input.mouse.prev.x;
         ctx->input.mouse.pos.y = ctx->input.mouse.prev.y;
     }
 #endif
-    nk_input_button(ctx, NK_BUTTON_LEFT, (int)x, (int)y, RGFWGetMouseButton(win, RGFW_MOUSE_BUTTON_LEFT) == RGFW_PRESS);
-    nk_input_button(ctx, NK_BUTTON_MIDDLE, (int)x, (int)y, RGFWGetMouseButton(win, RGFW_MOUSE_BUTTON_MIDDLE) == RGFW_PRESS);
-    nk_input_button(ctx, NK_BUTTON_RIGHT, (int)x, (int)y, RGFWGetMouseButton(win, RGFW_MOUSE_BUTTON_RIGHT) == RGFW_PRESS);
+
+    nk_input_button(ctx, NK_BUTTON_LEFT, p.x, p.y, RGFW_isMousePressed(win, RGFW_mouseLeft));
+    nk_input_button(ctx, NK_BUTTON_MIDDLE, p.x, p.y, RGFW_isMousePressed(win, RGFW_mouseMiddle));
+    nk_input_button(ctx, NK_BUTTON_RIGHT, p.x, p.y, RGFW_isMousePressed(win, RGFW_mouseRight));
     nk_input_button(ctx, NK_BUTTON_DOUBLE, (int)RGFW->double_click_pos.x, (int)RGFW->double_click_pos.y, RGFW->is_double_click_down);
     nk_input_scroll(ctx, RGFW->scroll);
     nk_input_end(&RGFW->ctx);
@@ -492,6 +568,11 @@ nk_RGFW_new_frame(struct nk_RGFW* RGFW)
 NK_API
 void nk_RGFW_shutdown(struct nk_RGFW* RGFW)
 {
+    if (clipboard_string != NULL) {
+        free(clipboard_string);
+        clipboard_string = NULL;
+    }
+    
     nk_font_atlas_clear(&RGFW->atlas);
     nk_free(&RGFW->ctx);
     nk_RGFW_device_destroy(RGFW);

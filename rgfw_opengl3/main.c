@@ -83,26 +83,14 @@ int main(void)
 {
     /* Platform */
     struct nk_RGFW RGFW = {0};
-    static RGFWwindow *win;
     int width = 0, height = 0;
     struct nk_context *ctx;
     struct nk_colorf bg;
 
     /* RGFW */
-    RGFWSetErrorCallback(error_callback);
-    if (!RGFWInit()) {
-        fprintf(stdout, "[GFLW] failed to init!\n");
-        exit(1);
-    }
-    RGFWWindowHint(RGFW_CONTEXT_VERSION_MAJOR, 3);
-    RGFWWindowHint(RGFW_CONTEXT_VERSION_MINOR, 3);
-    RGFWWindowHint(RGFW_OPENGL_PROFILE, RGFW_OPENGL_CORE_PROFILE);
-#ifdef __APPLE__
-    RGFWWindowHint(RGFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-    win = RGFWCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Demo", NULL, NULL);
-    RGFWMakeContextCurrent(win);
-    RGFWGetWindowSize(win, &width, &height);
+    RGFW_setGLVersion(3, 3);
+    RGFW_window* win = RGFW_createWindow("RGFW Demo", RGFW_RECT(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), RGFW_CENTER);
+    RGFW_window_makeCurrent(win);
 
     /* OpenGL */
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -128,10 +116,10 @@ int main(void)
     /*nk_style_set_font(ctx, &droid->handle);*/}
 
     bg.r = 0.10f, bg.g = 0.18f, bg.b = 0.24f, bg.a = 1.0f;
-    while (!RGFWWindowShouldClose(win))
+    while (!RGFW_window_shouldClose(win))
     {
         /* Input */
-        RGFWPollEvents();
+        RGFW_window_checkEvents(win, RGFW_NO_WAIT);
         nk_RGFW_new_frame(&RGFW);
 
         /* GUI */
@@ -185,8 +173,7 @@ int main(void)
         /* ----------------------------------------- */
 
         /* Draw */
-        RGFWGetWindowSize(win, &width, &height);
-        glViewport(0, 0, width, height);
+        glViewport(0, 0, win->r.w, win->r.h);
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(bg.r, bg.g, bg.b, bg.a);
         /* IMPORTANT: `nk_RGFW_render` modifies some global OpenGL state
@@ -195,10 +182,10 @@ int main(void)
          * Make sure to either a.) save and restore or b.) reset your own state after
          * rendering the UI. */
         nk_RGFW_render(&RGFW, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
-        RGFWSwapBuffers(win);
+        RGFW_window_swapBuffers(win);
     }
     nk_RGFW_shutdown(&RGFW);
-    RGFWTerminate();
+    RGFW_window_close(win);
     return 0;
 }
 

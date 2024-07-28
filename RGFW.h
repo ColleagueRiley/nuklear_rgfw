@@ -549,7 +549,8 @@ typedef struct RGFW_window {
 	u8* buffer; /*!< buffer for non-GPU systems (OSMesa, basic software rendering) */
 	/* when rendering using RGFW_BUFFER, the buffer is in the RGBA format */
 #endif
-
+	void* userPtr; /* ptr for usr data */
+	
 	RGFW_Event event; /*!< current event */
 
 	RGFW_rect r; /*!< the x, y, w and h of the struct */
