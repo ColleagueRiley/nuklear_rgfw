@@ -437,9 +437,9 @@ nk_RGFW_new_frame(void)
         ctx->input.mouse.pos.y = ctx->input.mouse.prev.y;
     }
 
-    nk_input_button(ctx, NK_BUTTON_LEFT, (int)x, (int)y, RGFW_isMousePressed(win, RGFW_mouseLeft) == RGFW_TRUE);
-    nk_input_button(ctx, NK_BUTTON_MIDDLE, (int)x, (int)y, RGFW_isMousePressed(win, RGFW_mouseMiddle) == RGFW_TRUE);
-    nk_input_button(ctx, NK_BUTTON_RIGHT, (int)x, (int)y, RGFW_isMousePressed(win, RGFW_mouseRight) == RGFW_TRUE);
+    nk_input_button(ctx, NK_BUTTON_LEFT, p.x, p.y, RGFW_isMousePressed(win, RGFW_mouseLeft));
+    nk_input_button(ctx, NK_BUTTON_MIDDLE, p.x, p.y, RGFW_isMousePressed(win, RGFW_mouseMiddle));
+    nk_input_button(ctx, NK_BUTTON_RIGHT, p.x, p.y, RGFW_isMousePressed(win, RGFW_mouseRight));
     nk_input_button(ctx, NK_BUTTON_DOUBLE, (int)RGFW.double_click_pos.x, (int)RGFW.double_click_pos.y, RGFW.is_double_click_down);
     nk_input_scroll(ctx, RGFW.scroll);
     nk_input_end(&RGFW.ctx);
