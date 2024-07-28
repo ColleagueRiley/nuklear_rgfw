@@ -75,13 +75,13 @@ ifneq (,$(filter $(CC),emcc))
 endif
 
 all: main.c
-	$(CC) main.c  $(LINK_GL1) $(LIBS) -o rgfw-nucklear$(EXT)
+	$(CC) main.c  $(LINK_GL1) $(LIBS) -o rgfw-nuklear$(EXT)
 
 clean:
-	rm -f *.exe rgfw-nucklear *.o 
+	rm -f *.exe rgfw-nuklear *.o 
 
 debug: main.c
-	$(CC) main.c $(LINK_GL1) $(LIBS) -D RGFW_DEBUG -o rgfw-nucklear$(EXT) 
+	$(CC) main.c $(LINK_GL1) $(LIBS) -D RGFW_DEBUG -o rgfw-nuklear$(EXT) 
 ifeq (,$(filter $(CC),emcc))
-	.$(OS_DIR)rgfw-nucklear$(EXT)
+	.$(OS_DIR)rgfw-nuklear$(EXT)
 endif

@@ -277,7 +277,7 @@ NK_API void
 nk_RGFW_mouse_button_callback(RGFW_window*  window, u8 button, double scroll, b8 pressed)
 {
     double x, y;
-    if (button != RGFW_mouseLeft) return;
+    if (button != RGFW_mouseLeft && button < RGFW_mouseScrollUp) return;
     RGFW_point p = RGFW_window_getMousePoint(window);
     x = (double)p.x;
     y = (double)p.y;
@@ -377,8 +377,8 @@ nk_RGFW_new_frame(void)
     RGFW.height = win->r.h;
 
     RGFW_area screenSize = RGFW_getScreenSize();
-    RGFW.display_width = screenSize.w;
-    RGFW.display_height = screenSize.h;
+    RGFW.display_width = win->r.w;
+    RGFW.display_height = win->r.h;
 
     RGFW.fb_scale.x = (float)RGFW.display_width/(float)RGFW.width;
     RGFW.fb_scale.y = (float)RGFW.display_height/(float)RGFW.height;
