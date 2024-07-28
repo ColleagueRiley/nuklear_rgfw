@@ -1,0 +1,35 @@
+name: Build and Deploy WASM
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Emscripten
+      uses: mymindstorm/setup-emsdk@v14
+      
+    - name: Build WASM
+      run: |
+        cd rgfw_opengl2 && make CC=emcc
+
+    - name: Commit WASM files
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "actions@github.com"
+        git add path/to/your/wasm/files
+        git commit -m "Update WASM files"
+        git push
+
