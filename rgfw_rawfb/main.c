@@ -63,23 +63,16 @@
 
 static int translate_rgfw_key(u32 key)
 {
-    const static u32 map[] = {
-        NK_KEY_NONE,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        NK_KEY_BACKSPACE,
-        NK_KEY_TAB,
-        0, 
-        NK_KEY_SHIFT,
-        NK_KEY_CTRL,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0,
-        NK_KEY_UP,
-        NK_KEY_DOWN,
-        NK_KEY_LEFT,
-        NK_KEY_RIGHT, 
-        
-        NK_KEY_DEL,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    const static u32 map[256] = {
+        [RGFW_backSpace] = NK_KEY_BACKSPACE,
+        [RGFW_tab] = NK_KEY_TAB,
+        [RGFW_shiftL] = NK_KEY_SHIFT,
+        [RGFW_controlL] = NK_KEY_CTRL,
+        [RGFW_up] = NK_KEY_UP,
+        [RGFW_down] = NK_KEY_DOWN,
+        [RGFW_left] = NK_KEY_LEFT,
+        [RGFW_right] = NK_KEY_RIGHT,    
+        [RGFW_delete] = NK_KEY_DEL,
     };
 
     return map[key];
@@ -135,7 +128,8 @@ int main(int argc, char **argv)
     NK_UNUSED(argc);
     NK_UNUSED(argv);
 
-    RGFW_window* window = RGFW_createWindow("Puzzle", RGFW_RECT(0, 0, 512, 512), RGFW_CENTER);
+    RGFW_window* window = RGFW_createWindow("Puzzle", RGFW_RECT(0, 0, 512, 512), RGFW_windowCenter);
+    RGFW_window_initBuffer(window);
     if (!window)
     {
         printf("can't open window!\n");
@@ -166,10 +160,10 @@ int main(int argc, char **argv)
                 case RGFW_quit:
                     break;
                 case RGFW_keyPressed:
-                    nk_input_key(&(context->ctx), translate_rgfw_key(window->event.keyCode), 1);
+                    nk_input_key(&(context->ctx), translate_rgfw_key(window->event.key), 1);
                     break;
                 case RGFW_keyReleased:
-                    nk_input_key(&(context->ctx), translate_rgfw_key(window->event.keyCode), 0);
+                    nk_input_key(&(context->ctx), translate_rgfw_key(window->event.key), 0);
                     break;
                 case RGFW_mousePosChanged:
                     nk_input_motion(&(context->ctx), window->event.point.x, window->event.point.y);
@@ -181,10 +175,10 @@ int main(int argc, char **argv)
                         nk_input_scroll(&(context->ctx), vec );
                         break;
                     }
-                    nk_input_button(&(context->ctx), window->event.button - 1, window->event.point.x, window->event.point.y, 1);
+                    nk_input_button(&(context->ctx), window->event.button, window->event.point.x, window->event.point.y, 1);
                     break;
                 case RGFW_mouseButtonReleased:
-                    nk_input_button(&(context->ctx), window->event.button - 1, window->event.point.x, window->event.point.y, 0);
+                    nk_input_button(&(context->ctx), window->event.button, window->event.point.x, window->event.point.y, 0);
                     break;
 
                 break;

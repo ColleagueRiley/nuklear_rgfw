@@ -31,7 +31,7 @@ NK_API void                 nk_RGFW_render(enum nk_anti_aliasing);
 NK_API void                 nk_RGFW_device_destroy(void);
 NK_API void                 nk_RGFW_device_create(void);
 
-NK_API void                 nk_RGFW_key_callback(RGFW_window* win, u32 keycode, char keyName[16], unsigned char lockState, unsigned char pressed);
+NK_API void                 nk_RGFW_key_callback(RGFW_window* win, u8 key, u8 ch, u8 lockState, RGFW_bool pressed);
 NK_API void                 nk_RGFW_mouse_button_callback(RGFW_window*  window, unsigned char button, double scroll, unsigned char pressed);
 NK_API void                 nk_rgfw_scroll_callback(RGFW_window* win, double xoff, double yoff);
 
@@ -460,57 +460,11 @@ nk_RGFW_render(enum nk_anti_aliasing AA)
     nk_RGFW_lock_buffer();
 }
 
-char RGFW_keyCodeToChar(u32 keyCode, b8 caps) {
-    static const char map[] = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        '`', '0', '1', '2', '3',
-        '4', '5', '6', '7', '8', 
-        '9', '-', '=', 0, '\t', 
-        0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
-        'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-        'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
-        'x', 'y', 'z', '.', ',', '/', '[', ']', 
-        ';', '\n', '\'', '\\', 
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-        '/', '*', '-', '1', '2', '3', 
-        '3', '5', '6', '7', '8',  '9', '0', '\n'
-    };
-
-    static const char mapCaps[] = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        '~', ')', '!', '@', '#',
-        '$', '%', '^', '&', '*', 
-        '(', '_', '+', 0, '0', 
-        0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
-        'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-        'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-        'X', 'Y', 'Z', '>', '<', '?', '{', '}', 
-        ':', '\n', '"', '|', 
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-        '?', '*', '-', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-
-    if (caps == RGFW_FALSE)
-        return map[keyCode];
-    
-    return mapCaps[keyCode];
-}
-
 NK_API void
-nk_RGFW_key_callback(RGFW_window* win, u32 keycode, char keyName[16], u8 lockState, b8 pressed)
-{
+nk_RGFW_key_callback(RGFW_window* win, u8 key, u8 ch, u8 lockState, RGFW_bool pressed) {
+    RGFW_UNUSED(lockState); RGFW_UNUSED(key); RGFW_UNUSED(win);
     if (pressed == RGFW_FALSE)
         return;
-    
-    RGFW_UNUSED(keyName);
-    
-    #define RGFW_xor(x, y) (( (x) && (!(y)) ) ||  ((y) && (!(x)) ))
-    b8 caps4caps = (lockState & RGFW_CAPSLOCK) && ((keycode >= RGFW_a) && (keycode <= RGFW_z));
-    char ch = RGFW_keyCodeToChar(keycode, RGFW_xor((RGFW_isPressed(win, RGFW_ShiftL) || RGFW_isPressed(win, RGFW_ShiftR)), caps4caps));
-    #undef RGFW_xor
-
     if (RGFW.text_len < NK_RGFW_TEXT_MAX)
         RGFW.text[RGFW.text_len++] = ch;
 }
@@ -524,7 +478,7 @@ nk_RGFW_scroll_callback(RGFW_window *win, double xoff, double yoff)
 }
 
 NK_API void
-nk_RGFW_mouse_button_callback(RGFW_window*  window, u8 button, double scroll, b8 pressed)
+nk_RGFW_mouse_button_callback(RGFW_window*  window, u8 button, double scroll, RGFW_bool pressed)
 {
     double x, y;
     if (button != RGFW_mouseLeft && button < RGFW_mouseScrollUp) return;
@@ -546,18 +500,11 @@ nk_RGFW_mouse_button_callback(RGFW_window*  window, u8 button, double scroll, b8
     } else RGFW.is_double_click_down = nk_false;
 }
 
-static char* clipboard_string = NULL;
-
 NK_INTERN void
 nk_RGFW_clipboard_paste(nk_handle usr, struct nk_text_edit *edit)
-{
-    if (clipboard_string != NULL) {
-        free(clipboard_string);
-        clipboard_string = NULL;
-    }
-    
+{   
     size_t size;
-    clipboard_string = RGFW_readClipboard(&size);
+    const char* clipboard_string = RGFW_readClipboard(&size);
     if (clipboard_string) nk_textedit_paste(edit, (const char*)clipboard_string, size);
     (void)usr;
 }
@@ -653,40 +600,39 @@ nk_RGFW_new_frame(void)
     else if (ctx->input.mouse.ungrab)
         RGFW_window_showMouse(win, 1);*/
 #endif
-    nk_input_key(ctx, NK_KEY_DEL, RGFW_isPressed(win, RGFW_Delete) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_ENTER, RGFW_isPressed(win, RGFW_Return) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_TAB, RGFW_isPressed(win, RGFW_Tab) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_BACKSPACE, RGFW_isPressed(win, RGFW_BackSpace) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_UP, RGFW_isPressed(win, RGFW_Up) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_DOWN, RGFW_isPressed(win, RGFW_Down) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_TEXT_START, RGFW_isPressed(win, RGFW_Home) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_TEXT_END, RGFW_isPressed(win, RGFW_End) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_SCROLL_START, RGFW_isPressed(win, RGFW_Home) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_SCROLL_END, RGFW_isPressed(win, RGFW_End) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_SCROLL_DOWN, RGFW_isPressed(win, RGFW_PageDown) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_SCROLL_UP, RGFW_isPressed(win, RGFW_PageUp) == RGFW_TRUE);
-    nk_input_key(ctx, NK_KEY_SHIFT, RGFW_isPressed(win, RGFW_ShiftL) == RGFW_TRUE||
-                                    RGFW_isPressed(win, RGFW_ShiftR) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_DEL, RGFW_isPressed(win, RGFW_delete) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_ENTER, RGFW_isPressed(win, RGFW_return) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_TAB, RGFW_isPressed(win, RGFW_tab) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_BACKSPACE, RGFW_isPressed(win, RGFW_backSpace) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_UP, RGFW_isPressed(win, RGFW_up) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_DOWN, RGFW_isPressed(win, RGFW_down) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_TEXT_START, RGFW_isPressed(win, RGFW_home) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_TEXT_END, RGFW_isPressed(win, RGFW_end) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_SCROLL_START, RGFW_isPressed(win, RGFW_home) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_SCROLL_END, RGFW_isPressed(win, RGFW_end) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_SCROLL_DOWN, RGFW_isPressed(win, RGFW_pageDown) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_SCROLL_UP, RGFW_isPressed(win, RGFW_pageUp) == RGFW_TRUE);
+    nk_input_key(ctx, NK_KEY_SHIFT, RGFW_isPressed(win, RGFW_shiftL) == RGFW_TRUE||
+                                    RGFW_isPressed(win, RGFW_shiftR) == RGFW_TRUE);
 
-    if (RGFW_isPressed(win, RGFW_ControlL) == RGFW_TRUE ||
-        RGFW_isPressed(win, RGFW_ControlR) == RGFW_TRUE) {
+    if (RGFW_isPressed(win, RGFW_controlL) == RGFW_TRUE ||
+        RGFW_isPressed(win, RGFW_controlR) == RGFW_TRUE) {
         nk_input_key(ctx, NK_KEY_COPY, RGFW_isPressed(win, RGFW_c) == RGFW_TRUE);
         nk_input_key(ctx, NK_KEY_PASTE, RGFW_isPressed(win, RGFW_v) == RGFW_TRUE);
         nk_input_key(ctx, NK_KEY_CUT, RGFW_isPressed(win, RGFW_x) == RGFW_TRUE);
         nk_input_key(ctx, NK_KEY_TEXT_UNDO, RGFW_isPressed(win, RGFW_z) == RGFW_TRUE);
         nk_input_key(ctx, NK_KEY_TEXT_REDO, RGFW_isPressed(win, RGFW_r) == RGFW_TRUE);
-        nk_input_key(ctx, NK_KEY_TEXT_WORD_LEFT, RGFW_isPressed(win, RGFW_Left) == RGFW_TRUE);
-        nk_input_key(ctx, NK_KEY_TEXT_WORD_RIGHT, RGFW_isPressed(win, RGFW_Right) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_TEXT_WORD_LEFT, RGFW_isPressed(win, RGFW_left) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_TEXT_WORD_RIGHT, RGFW_isPressed(win, RGFW_right) == RGFW_TRUE);
         nk_input_key(ctx, NK_KEY_TEXT_LINE_START, RGFW_isPressed(win, RGFW_b) == RGFW_TRUE);
         nk_input_key(ctx, NK_KEY_TEXT_LINE_END, RGFW_isPressed(win, RGFW_e) == RGFW_TRUE);
     } else {
-        nk_input_key(ctx, NK_KEY_LEFT, RGFW_isPressed(win, RGFW_Left) == RGFW_TRUE);
-        nk_input_key(ctx, NK_KEY_RIGHT, RGFW_isPressed(win, RGFW_Right) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_LEFT, RGFW_isPressed(win, RGFW_left) == RGFW_TRUE);
+        nk_input_key(ctx, NK_KEY_RIGHT, RGFW_isPressed(win, RGFW_right) == RGFW_TRUE);
         nk_input_key(ctx, NK_KEY_COPY, 0);
         nk_input_key(ctx, NK_KEY_PASTE, 0);
         nk_input_key(ctx, NK_KEY_CUT, 0);
     }
-
 
     RGFW_point p = RGFW_window_getMousePoint(RGFW.win);
     nk_input_motion(ctx, p.x, p.y);
@@ -714,11 +660,6 @@ nk_RGFW_new_frame(void)
 NK_API
 void nk_RGFW_shutdown(void)
 {
-    if (clipboard_string != NULL) {
-        free(clipboard_string);
-        clipboard_string = NULL;
-    }
-
     nk_font_atlas_clear(&RGFW.atlas);
     nk_free(&RGFW.ctx);
     nk_RGFW_device_destroy();

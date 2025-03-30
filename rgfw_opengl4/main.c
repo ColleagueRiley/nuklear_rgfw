@@ -9,7 +9,9 @@
 #include <limits.h>
 #include <time.h>
 
+#define OEMRESOURCE
 #include <GL/glew.h>
+#include <GL/gl.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -87,8 +89,10 @@ int main(void)
     struct nk_colorf bg;
 
     /* RGFW */
-    RGFW_setGLVersion(4, 5);
-    RGFW_window* win = RGFW_createWindow("RGFW Demo", RGFW_RECT(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), RGFW_CENTER);
+    RGFW_setGLHint(RGFW_glMajor, 3);
+    RGFW_setGLHint(RGFW_glMinor, 5);
+ 
+    RGFW_window* win = RGFW_createWindow("RGFW Demo", RGFW_RECT(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), RGFW_windowCenter);
     RGFW_window_makeCurrent(win);
 
     /* OpenGL */
@@ -130,7 +134,7 @@ int main(void)
     while (!RGFW_window_shouldClose(win))
     {
         /* Input */
-        RGFW_window_checkEvents(win, RGFW_NO_WAIT);
+        RGFW_window_checkEvents(win, RGFW_eventNoWait);
         nk_RGFW_new_frame();
 
         /* GUI */

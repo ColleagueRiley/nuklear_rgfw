@@ -18,6 +18,8 @@
 #define NK_INCLUDE_DEFAULT_FONT
 #define NK_IMPLEMENTATION
 
+#define OEMRESOURCE
+
 #define NK_KEYSTATE_BASED_INPUT
 #include "nuklear.h"
 
@@ -92,7 +94,7 @@ int main(void)
 #endif
 
     /* RGFW */
-    RGFW_window* win = RGFW_createWindow("RGFW Demo", RGFW_RECT(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), RGFW_CENTER);
+    RGFW_window* win = RGFW_createWindow("RGFW Demo", RGFW_RECT(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), RGFW_windowCenter);
     
     /* GUI */
     #ifdef API_OPENGL2
@@ -138,7 +140,7 @@ int main(void)
     while (!RGFW_window_shouldClose(win))
     {
         /* Input */
-        RGFW_window_checkEvents(win, RGFW_NO_WAIT);
+        RGFW_window_checkEvents(win, RGFW_eventNoWait);
         nk_RGFW_new_frame();
 
         /* GUI */
