@@ -13,7 +13,9 @@
 #ifndef NK_RGFW_GL3_H_
 #define NK_RGFW_GL3_H_
 
+#ifndef RGFWDEF
 #include "RGFW.h"
+#endif
 
 enum nk_RGFW_init_state{
     NK_RGFW_DEFAULT=0,
@@ -360,17 +362,15 @@ nk_RGFW_mouse_button_callback(RGFW_window*  window, u8 button, double scroll, RG
 NK_INTERN void
 nk_RGFW_clipboard_paste(nk_handle usr, struct nk_text_edit *edit)
 {
-    struct nk_RGFW* RGFW = (struct nk_RGFW*)usr.ptr;
-   size_t size;
-    const char* clipboard_string = RGFW_readClipboard(&size);
-    nk_textedit_paste(edit, (const char*)clipboard_string, size);
-    (void)usr;
+	size_t size;
+	const char* clipboard_string = RGFW_readClipboard(&size);
+	nk_textedit_paste(edit, (const char*)clipboard_string, size);
+	(void)usr;
 }
 
 NK_INTERN void
 nk_RGFW_clipboard_copy(nk_handle usr, const char *text, int len)
 {
-    struct nk_RGFW* RGFW = (struct nk_RGFW*)usr.ptr;
     char *str = 0;
     (void)usr;
     if (!len) return;
@@ -427,14 +427,12 @@ NK_API void
 nk_RGFW_new_frame(struct nk_RGFW* RGFW)
 {
     int i;
-    double x, y;
     struct nk_context *ctx = &RGFW->ctx;
     struct RGFW_window *win = RGFW->win;
 
     RGFW->width = win->r.w;
     RGFW->height = win->r.h;
 
-    RGFW_area screenSize = RGFW_getScreenSize();
     RGFW->display_width = win->r.w;
     RGFW->display_height = win->r.h;
 
@@ -451,7 +449,7 @@ nk_RGFW_new_frame(struct nk_RGFW* RGFW)
         but it seems to cause a lot of weird issues
     */
     /* optional grabbing behavior */
-    /*if (ctx->input.mouse.grab) /* I don't know if this is the intended behavior /
+    /* if (ctx->input.mouse.grab) */ /* I don't know if this is the intended behavior /
         RGFW_window_showMouse(win, 0); or RGFW_window_holdMouse ?
     else if (ctx->input.mouse.ungrab)
         RGFW_window_showMouse(win, 1);*/
