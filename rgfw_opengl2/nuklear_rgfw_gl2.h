@@ -13,7 +13,9 @@
 #ifndef NK_RGFW_GL2_H_
 #define NK_RGFW_GL2_H_
 
+#ifndef RGFWDEF
 #include "RGFW.h"
+#endif
 
 #include <GL/gl.h>
 
@@ -314,14 +316,12 @@ NK_API void
 nk_RGFW_new_frame(void)
 {
     int i;
-    double x, y;
     struct nk_context *ctx = &RGFW.ctx;
     struct RGFW_window* win = RGFW.win;
 
     RGFW.width = win->r.w;
     RGFW.height = win->r.h;
 
-    RGFW_area screenSize = RGFW_getScreenSize();
     RGFW.display_width = win->r.w;
     RGFW.display_height = win->r.h;
 
@@ -337,7 +337,7 @@ nk_RGFW_new_frame(void)
         but it seems to cause a lot of weird issues
     */
     /* optional grabbing behavior */
-    /*if (ctx->input.mouse.grab) /* I don't know if this is the intended behavior /
+    /* if (ctx->input.mouse.grab) */ /* I don't know if this is the intended behavior /
         RGFW_window_showMouse(win, 0); or RGFW_window_holdMouse ?
     else if (ctx->input.mouse.ungrab)
         RGFW_window_showMouse(win, 1);*/
