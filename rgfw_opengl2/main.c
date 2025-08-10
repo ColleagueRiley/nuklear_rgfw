@@ -23,11 +23,13 @@
 #define NK_KEYSTATE_BASED_INPUT
 #include "nuklear.h"
 
-#define NK_RGFW_GL2_IMPLEMENTATION
-#include "nuklear_rgfw_gl2.h"
 
 #define RGFW_IMPLEMENTATION
+#define RGFW_OPENGL
 #include "RGFW.h"
+
+#define NK_RGFW_GL2_IMPLEMENTATION
+#include "nuklear_rgfw_gl2.h"
 
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 800
@@ -94,7 +96,8 @@ int main(void)
 #endif
 
     /* RGFW */
-    RGFW_window* win = RGFW_createWindow("RGFW Demo", RGFW_RECT(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), RGFW_windowCenter);
+	RGFW_window* win = RGFW_createWindow("RGFW OpenGL 2.0 Demo", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, RGFW_windowCenter | RGFW_windowOpenGL);
+	RGFW_window_makeCurrentContext_OpenGL(win);
     
     /* GUI */
     #ifdef API_OPENGL2
@@ -137,10 +140,17 @@ int main(void)
     #endif
     char buf[256] = {0};
 
-    while (!RGFW_window_shouldClose(win))
+	RGFW_bool running = 1;
+    while (!RGFW_window_shouldClose(win) && running)
     {
         /* Input */
-        RGFW_window_checkEvents(win, RGFW_eventNoWait);
+		RGFW_event event;
+        while (RGFW_window_checkEvent(win, &event)) {
+			if (event.type == RGFW_quit) {
+				running = 0;
+				break;
+			}
+		}
         nk_RGFW_new_frame();
 
         /* GUI */
@@ -198,7 +208,7 @@ int main(void)
         /* ----------------------------------------- */
 
         /* Draw */
-        glViewport(0, 0, win->r.w, win->r.h);
+        glViewport(0, 0, win->w, win->h);
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(bg.r, bg.g, bg.b, bg.a);
         /* IMPORTANT: `nk_RGFW_render` modifies some global OpenGL state
@@ -206,7 +216,7 @@ int main(void)
          * back into a default state. Make sure to either save and restore or
          * reset your own state after drawing rendering the UI. */
         nk_RGFW_render(NK_ANTI_ALIASING_ON);
-        RGFW_window_swapBuffers(win);
+        RGFW_window_swapBuffers_OpenGL(win);
     }
 
     #ifdef INCLUDE_FILE_BROWSER

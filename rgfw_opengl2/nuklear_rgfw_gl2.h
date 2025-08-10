@@ -13,6 +13,19 @@
 #ifndef NK_RGFW_GL2_H_
 #define NK_RGFW_GL2_H_
 
+/*
+#ifdef RANDOM_MACRO_TO_MAKE_CLANGD_HAPPY
+#define NK_INCLUDE_FIXED_TYPES
+#define NK_INCLUDE_STANDARD_IO
+#define NK_INCLUDE_STANDARD_VARARGS
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
+#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+#define NK_INCLUDE_FONT_BAKING
+#define NK_INCLUDE_DEFAULT_FONT
+#include "nuklear.h"
+#endif
+*/
+
 #ifndef RGFWDEF
 #include "RGFW.h"
 #endif
@@ -23,6 +36,7 @@ enum nk_RGFW_init_state{
     NK_RGFW_DEFAULT = 0,
     NK_RGFW_INSTALL_CALLBACKS
 };
+
 NK_API struct nk_context*   nk_RGFW_init(struct RGFW_window* win, enum nk_RGFW_init_state);
 NK_API void                 nk_RGFW_font_stash_begin(struct nk_font_atlas **atlas);
 NK_API void                 nk_RGFW_font_stash_end(void);
@@ -31,7 +45,7 @@ NK_API void                 nk_RGFW_new_frame(void);
 NK_API void                 nk_RGFW_render(enum nk_anti_aliasing);
 NK_API void                 nk_RGFW_shutdown(void);
 
-NK_API void                 nk_RGFW_key_callback(RGFW_window* win, u8 key, u8 ch, u8 mod, RGFW_bool pressed);
+NK_API void                 nk_RGFW_key_callback(RGFW_window* win, u8 key, u8 sym, RGFW_keymod mod, RGFW_bool repeat, RGFW_bool pressed);
 NK_API void                 nk_RGFW_mouse_button_callback(RGFW_window*  window, unsigned char button, double scroll, RGFW_bool pressed);
 NK_API void                 nk_rgfw_scroll_callback(RGFW_window* win, double xoff, double yoff);
 
@@ -211,12 +225,12 @@ nk_RGFW_render(enum nk_anti_aliasing AA)
 }
 
 NK_API void
-nk_RGFW_key_callback(RGFW_window* win, u8 key, u8 ch, u8 lockState, RGFW_bool pressed) {
-    RGFW_UNUSED(lockState); RGFW_UNUSED(key); RGFW_UNUSED(win);
+nk_RGFW_key_callback(RGFW_window* win, u8 key, u8 sym, RGFW_keymod mod, RGFW_bool repeat, RGFW_bool pressed) {
+    RGFW_UNUSED(repeat); RGFW_UNUSED(key); RGFW_UNUSED(win); RGFW_UNUSED(mod);
     if (pressed == RGFW_FALSE)
         return;
     if (RGFW.text_len < NK_RGFW_TEXT_MAX)
-        RGFW.text[RGFW.text_len++] = ch;
+        RGFW.text[RGFW.text_len++] = sym;
 }
 
 NK_API void
@@ -227,26 +241,36 @@ nk_rgfw_scroll_callback(RGFW_window* win, double xoff, double yoff)
     RGFW.scroll.y += (float)yoff;
 }
 
+NK_API double
+nk_RGFW_get_time() {
+	static time_t start = 0;
+	if (start == 0) {
+		start = time(0);
+	}
+
+	return difftime(time(0),start);
+}
+
 NK_API void
 nk_RGFW_mouse_button_callback(RGFW_window*  window, u8 button, double scroll, RGFW_bool pressed)
 {
-    double x, y;
     if (button != RGFW_mouseLeft && button < RGFW_mouseScrollUp) return;
-    RGFW_point p = RGFW_window_getMousePoint(window);
-    x = (double)p.x;
-    y = (double)p.y;
+    
+	i32 x;
+	i32 y;
+	RGFW_window_getMouse(window, &x, &y);
 
     if (button >= RGFW_mouseScrollUp) {
         return nk_rgfw_scroll_callback(window, 0, scroll);
     }
 
     if (pressed == RGFW_TRUE)  {
-        double dt = RGFW_getTime() - RGFW.last_button_click;
+        double dt = nk_RGFW_get_time() - RGFW.last_button_click;
         if (dt > NK_RGFW_DOUBLE_CLICK_LO && dt < NK_RGFW_DOUBLE_CLICK_HI) {
             RGFW.is_double_click_down = nk_true;
             RGFW.double_click_pos = nk_vec2((float)x, (float)y);
         }
-        RGFW.last_button_click = RGFW_getTime();
+        RGFW.last_button_click = nk_RGFW_get_time();
     } else RGFW.is_double_click_down = nk_false;
 }
 
@@ -319,14 +343,14 @@ nk_RGFW_new_frame(void)
     struct nk_context *ctx = &RGFW.ctx;
     struct RGFW_window* win = RGFW.win;
 
-    RGFW.width = win->r.w;
-    RGFW.height = win->r.h;
+    RGFW.width = win->w;
+    RGFW.height = win->h;
 
-    RGFW.display_width = win->r.w;
-    RGFW.display_height = win->r.h;
+    RGFW.display_width = win->w;
+    RGFW.display_height = win->h;
 
-    RGFW.fb_scale.x = (float)RGFW.display_width/(float)RGFW.width;
-    RGFW.fb_scale.y = (float)RGFW.display_height/(float)RGFW.height;
+    RGFW.fb_scale.x = 1;
+    RGFW.fb_scale.y = 1;
 
     nk_input_begin(ctx);
     for (i = 0; i < RGFW.text_len; ++i)
@@ -376,19 +400,21 @@ nk_RGFW_new_frame(void)
         nk_input_key(ctx, NK_KEY_CUT, 0);
     }
 
-    RGFW_point p = RGFW_window_getMousePoint(RGFW.win);
-    nk_input_motion(ctx, p.x, p.y);
+	i32 x;
+	i32 y;
+	RGFW_window_getMouse(win, &x, &y);
+    nk_input_motion(ctx, x, y);
     if (ctx->input.mouse.grabbed) {
-        ctx->input.mouse.prev.x = (float)p.x;
-        ctx->input.mouse.prev.y = (float)p.y;
+        ctx->input.mouse.prev.x = (float)x;
+        ctx->input.mouse.prev.y = (float)y;
 
         ctx->input.mouse.pos.x = ctx->input.mouse.prev.x;
         ctx->input.mouse.pos.y = ctx->input.mouse.prev.y;
     }
 
-    nk_input_button(ctx, NK_BUTTON_LEFT, p.x, p.y, RGFW_isMousePressed(win, RGFW_mouseLeft));
-    nk_input_button(ctx, NK_BUTTON_MIDDLE, p.x, p.y, RGFW_isMousePressed(win, RGFW_mouseMiddle));
-    nk_input_button(ctx, NK_BUTTON_RIGHT, p.x, p.y, RGFW_isMousePressed(win, RGFW_mouseRight));
+    nk_input_button(ctx, NK_BUTTON_LEFT, x, y, RGFW_isMousePressed(win, RGFW_mouseLeft));
+    nk_input_button(ctx, NK_BUTTON_MIDDLE, x, y, RGFW_isMousePressed(win, RGFW_mouseMiddle));
+    nk_input_button(ctx, NK_BUTTON_RIGHT, x, y, RGFW_isMousePressed(win, RGFW_mouseRight));
     nk_input_button(ctx, NK_BUTTON_DOUBLE, (int)RGFW.double_click_pos.x, (int)RGFW.double_click_pos.y, RGFW.is_double_click_down);
     nk_input_scroll(ctx, RGFW.scroll);
     nk_input_end(&RGFW.ctx);
