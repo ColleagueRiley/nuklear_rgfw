@@ -92,7 +92,7 @@ int main(void)
 	RGFW_glHints* hints = RGFW_getGlobalHints_OpenGL();
 	hints->major = 3;
 	hints->minor = 3;
-	RGFW_window* win = RGFW_createWindow("RGFW OpenGL 3.0 Demo", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, RGFW_windowCenter | RGFW_windowOpenGL);
+	RGFW_window* win = RGFW_createWindow("RGFW OpenGL 3.3 Demo", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, RGFW_windowCenter | RGFW_windowOpenGL);
 	RGFW_window_makeCurrentContext_OpenGL(win);
 
     /* OpenGL */

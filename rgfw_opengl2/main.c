@@ -96,15 +96,11 @@ int main(void)
 #endif
 
     /* RGFW */
-	RGFW_window* win = RGFW_createWindow("RGFW OpenGL 2.0 Demo", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, RGFW_windowCenter | RGFW_windowOpenGL);
+	RGFW_window* win = RGFW_createWindow("RGFW OpenGL 2 Demo", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, RGFW_windowCenter | RGFW_windowOpenGL);
 	RGFW_window_makeCurrentContext_OpenGL(win);
     
     /* GUI */
-    #ifdef API_OPENGL2
     ctx = nk_RGFW_init(win, NK_RGFW_INSTALL_CALLBACKS);
-    #else
-    ctx = nk_RGFW_init(win, NK_RGFW_INSTALL_CALLBACKS);
-    #endif
     /* Load Fonts: if none of these are loaded a default font will be used  */
     /* Load Cursor: if you uncomment cursor loading please hide the cursor */
     {struct nk_font_atlas *atlas;

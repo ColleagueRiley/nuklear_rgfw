@@ -13,23 +13,9 @@
 #ifndef NK_RGFW_GL3_H_
 #define NK_RGFW_GL3_H_
 
-#ifdef RANDOM_MACRO_TO_MAKE_CLANGD_HAPPY
-#define NK_INCLUDE_FIXED_TYPES
-#define NK_INCLUDE_STANDARD_IO
-#define NK_INCLUDE_STANDARD_VARARGS
-#define NK_INCLUDE_DEFAULT_ALLOCATOR
-#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
-#define NK_INCLUDE_FONT_BAKING
-#define NK_INCLUDE_DEFAULT_FONT
-#include "nuklear.h"
-#endif
-
 #ifndef RGFWDEF
 #include "RGFW.h"
 #endif
-
-#include <GL/glew.h>
-#include <GL/gl.h>
 
 enum nk_RGFW_init_state{
     NK_RGFW_DEFAULT=0,
@@ -359,7 +345,7 @@ nk_RGFW_get_time() {
 	return difftime(time(0),start);
 }
 
-	NK_API void
+NK_API void
 nk_RGFW_mouse_button_callback(RGFW_window*  window, u8 button, double scroll, RGFW_bool pressed)
 {
     struct nk_RGFW* RGFW = (struct nk_RGFW*)window->userPtr;
