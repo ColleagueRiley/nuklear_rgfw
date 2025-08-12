@@ -24,6 +24,11 @@
 #define NK_RGFW_GL3_IMPLEMENTATION
 #define NK_KEYSTATE_BASED_INPUT
 #include "nuklear.h"
+
+#define RGFW_IMPLEMENTATION
+#define RGFW_OPENGL
+#include "RGFW.h"
+
 #include "nuklear_rgfw_gl3.h"
 
 #define WINDOW_WIDTH 1200
@@ -31,9 +36,6 @@
 
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
-
-#define RGFW_IMPLEMENTATION
-#include "RGFW.h"
 
 /* ===============================================================
  *
@@ -78,22 +80,20 @@
  *                          DEMO
  *
  * ===============================================================*/
-static void error_callback(int e, const char *d)
-{printf("Error %d: %s\n", e, d);}
 
 int main(void)
 {
     /* Platform */
     struct nk_RGFW RGFW = {0};
-    int width = 0, height = 0;
     struct nk_context *ctx;
     struct nk_colorf bg;
 
     /* RGFW */
-    RGFW_setGLHint(RGFW_glMajor, 3);
-    RGFW_setGLHint(RGFW_glMinor, 3);
-    RGFW_window* win = RGFW_createWindow("RGFW Demo", RGFW_RECT(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), RGFW_windowCenter);
-    RGFW_window_makeCurrent(win);
+	RGFW_glHints* hints = RGFW_getGlobalHints_OpenGL();
+	hints->major = 3;
+	hints->minor = 3;
+	RGFW_window* win = RGFW_createWindow("RGFW OpenGL 3.3 Demo", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, RGFW_windowCenter | RGFW_windowOpenGL);
+	RGFW_window_makeCurrentContext_OpenGL(win);
 
     /* OpenGL */
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -118,11 +118,25 @@ int main(void)
     /*nk_style_load_all_cursors(ctx, atlas->cursors);*/
     /*nk_style_set_font(ctx, &droid->handle);*/}
 
+	int major, minor;
+	glGetIntegerv(GL_MAJOR_VERSION, &major);
+	glGetIntegerv(GL_MINOR_VERSION, &minor);
+
+	printf("Major %d\n", major);
+	printf("Minor %d\n", minor);
+
     bg.r = 0.10f, bg.g = 0.18f, bg.b = 0.24f, bg.a = 1.0f;
-    while (!RGFW_window_shouldClose(win))
+	RGFW_bool running = 1;
+    while (!RGFW_window_shouldClose(win) && running)
     {
         /* Input */
-        RGFW_window_checkEvents(win, RGFW_eventNoWait);
+		RGFW_event event;
+        while (RGFW_window_checkEvent(win, &event)) {
+			if (event.type == RGFW_quit) {
+				running = 0;
+				break;
+			}
+		}
         nk_RGFW_new_frame(&RGFW);
 
         /* GUI */
@@ -176,7 +190,7 @@ int main(void)
         /* ----------------------------------------- */
 
         /* Draw */
-        glViewport(0, 0, win->r.w, win->r.h);
+        glViewport(0, 0, win->w, win->h);
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(bg.r, bg.g, bg.b, bg.a);
         /* IMPORTANT: `nk_RGFW_render` modifies some global OpenGL state
@@ -185,7 +199,7 @@ int main(void)
          * Make sure to either a.) save and restore or b.) reset your own state after
          * rendering the UI. */
         nk_RGFW_render(&RGFW, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
-        RGFW_window_swapBuffers(win);
+        RGFW_window_swapBuffers_OpenGL(win);
     }
     nk_RGFW_shutdown(&RGFW);
     RGFW_window_close(win);
