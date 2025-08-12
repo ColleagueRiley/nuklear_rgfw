@@ -339,10 +339,10 @@ NK_API double
 nk_RGFW_get_time() {
 	static time_t start = 0;
 	if (start == 0) {
-		start = time(0);
+		start = clock();
 	}
 
-	return difftime(time(0),start);
+	return difftime(clock(),start);
 }
 
 NK_API void
